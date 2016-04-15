@@ -24,3 +24,23 @@ fec_b 第一个case，com0 vdec解码全部错误
 20160414    09:34
 问题：fec链路仿真case108，修复错1bit的问题，原来可以正常仿真，现在却卡在20ms不动了。
 结果：徐淇查了后，发现是平台改了一处，把task_tag由原来的3bit改成了4bit，他本来需要的是0~2，但实际配置的是8~10，扩一比特后，出现这个问题。这明显是系统和平台约定的问题，二者在此有不一致，因此导致问题产生。
+
+20160415    13:01
+问题：fec_b case4 TTRAM和RIB RAM都比不对。
+结果：dint_wcdma.vhd中diram_sel没有接，严重级bug！
+
+问题：fec_b case4 TTRAM和RIBRAM还是都不对。
+结果：harq2 top中，dint_ttram_ack_hram接的是req_ack，而不是ack，提前一拍出来，和实际需求不相符。
+
+问题：fec_a case108 RIBRAM不对。
+结果：sel_ABCD没有改成2。
+
+问题：fec_a case108 RIBRAM还是不对。
+结果：task_tag本应是0~4，实际log打的是8~12，徐淇把其改为89999，小于10对于他识别dpch个数没有问题，却无法区分信道，才致使对比错乱而出错。
+
+问题：新伟大平台vdec解码错误。
+结果：dbits_dst_sel寄存器未配置，其他好多寄存器应该也未配置。
+
+20160415    16:06
+问题：fec_b case4 TTRAM对比依然不对。
+结果：case4的deint输出到hram，平台是从ttram中读取结果的，肯定出错，这块事先都不知道，故此出错，需要改平台。
