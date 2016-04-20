@@ -44,3 +44,15 @@ fec_b 第一个case，com0 vdec解码全部错误
 20160415    16:06
 问题：fec_b case4 TTRAM对比依然不对。
 结果：case4的deint输出到hram，平台是从ttram中读取结果的，肯定出错，这块事先都不知道，故此出错，需要改平台。
+
+20160415    18:52
+问题：fec_a case108/173/... RIBRAM对比不上。
+结果：case108/173 list_vdec_sel配置为0，但log打出的RIBRAM其实是list_vdec_sel为1时的输出，所以对不上，新log已打出，还未验。
+
+20160418    11:08
+问题：wcdma_subsys case10 20ms TURBO比不上，40ms VDEC TTRAM比不上。
+结果：FMRAM对不上，系统log未更新。其实查仿真结果就可以看出来，结果让我看了一上午波形，FUCK！
+
+20160418    20:28
+问题：fec_b case4 仿真时vdec不出中断，TTRAM对比正确。
+结果：发现vdec一个严重bug，vdec_tbits_assemble.vhd中，out_word_last条件中，有一个有误，修改后，fec_b 7个case全部通过。
