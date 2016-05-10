@@ -64,3 +64,42 @@ fec_b 第一个case，com0 vdec解码全部错误
 20160420    19:57
 问题：fec_b case33 TTRAM正确，RIBRAM不对，小平台跑RIBRAM对，不知道什么原因？
 结果：非常非常灵感，首先现象非常诡异，从出错的那个word开始，minstate_index就不一样，然后看C0/1/2_reg，也有各别不一样，我就想干脆从TTRAM口看吧。就从前一个窗看起，一个一个比都一样，突然大平台读端口出现很多其他模块读请求，不管，还比较，比着比着发现有个地方不一样，而且下一个周期就一样了，也就是说晚一拍出来，又一看是MP总线在同时读数，而且此时是H0/1拼的TTRAM，H0对，但H1不对，就比H1，发现H1同时有ARM在读，突然灵感出现。这里要求H0/1读必须不能有干扰，所以ARM读破坏了H0/1的一致性，导致TTRAM出来有误，进而使RIBRAM出错。
+
+20160421    17:02
+问题：fec_b case45 TTRAM正确，RIBRAM最后一个CB的十几个word不对。
+结果：又是这种难以解决的问题。对比原始log和波形，确认word不对。分析多CB类型，总共47个word，分为三个CB，每个CB 15.56个word，然后就发现输出了48个word，居然多了一个word。就开始分析每一个CB输出word总数和剩余bit总数，发现第二个CB结束时，输出word总数正确，剩余比特总数正确，但tbits_assemble out_shift_en, inc_index, out_index不对，本该拉低和计数的，但在最后一个比特不动了，找了半天，发现是模块的enable提前结束了。找到问题，吴哥让把trace例化assemble时把enable置常1，即可解决此问题。但之前case33一样的情况啊，为什么会仿真通过？？？正在仿真，求结论！结论：enable提前结束，但下个CB enable 打开时，会接着进行上次比特移出，通常几十个周期后才会来数，所以不会覆盖结果，这样test33每次都能过关，所以没问题。test45出问题是因为最后一个CB开始时，只剩下1比特需要移出，而此时上个CB的is_last_win还没有变低，因此，移出这一比特后，检测到is_last_cb&&is_last_win，所以开户了pading，进行word pad，导致内部乱掉了，所以出错。这个case幸亏last_cb前剩余2比特，才导致这种情况被仿真出来，真的真的太巧合了，也太幸运了，否则不可能找到这个问题的。
+
+20140426    15:14
+问题：fec_a 200多个case重新刷后，有100多个跑着会卡死。
+结果：经查看波形，tdec跑了三次，前两次正常启动和结束，第三次却没有出来done信号。经新阳查看后，是昨天改dbits_dump输出时导致的，hold不正常导致卡死。
+
+昨天的
+问题：fec_b case15 卡死，不能进行仿真。
+结果：is_last_win持续时间过长，只在检测到trace_start才进行is_last_win判断，那么两次trace之间就一直不变，显然会造成不利影响。因为tbits_assemble模块使用此信号进行控制，所以导致程序判断错误。
+
+问题：fec_b test52 CRC对不上。
+结果：log 的CRC_RESULT和TRBLK序号关系是反序对应，硬件是正序，改log就可解决。
+
+问题：dbits_dump 输出，fec_a case139仿真时，卡死。
+结果：cmd_ctrl keepout采用dbits_dump_hold，done在hold后三个周期才输出，导致无法切换至下一任务。vdec/tdec均存在，这个信号应该可以不用，所以后来接成‘0’后通过。
+
+问题：fec_b case44 tdec ribram解码结果全是0。
+结果：log中，p2 rm后已无softbit，但p1还有很多，不符合turbo编码协议，需要改log。
+
+20160428
+问题：wcdma层 fec_b仿真无中断输出。
+结果：代码中用作clock gate的vdec_busy仍使用vdec输出，需要改成cmd_ctrl的active_list的reduce_or。当时改A时，忘了改B了，是我的错。
+
+20160503
+问题：fec_b tfci0解码结果全部错误。
+结果：wcdma_decoder2顶层没有连接tfci0_mpbusy/tfci1_mpbusy，并且tfci0/1_xdbusy接法未更新，还是下降沿的接法，不正确。修改后，仿真通过。
+
+20160510    17:24
+问题：wcdma_subsys test20 crc最后两次不对。
+结果：6个tb，前两个输出3F，无顺序问题，后两个有个别零，但倒序后对上了，因为RIBRAM对比都正确了，所以肯定是log顺序没调整过来。
+
+问题：wcdma_subsys test17 btfd dint在fmram第二帧时才处理，第一帧未读取。
+结果：明显是dpch_frame的问题，一看发现是frame_index配置过晚，第一帧到来才配置，导致未识别第一帧数据，修改平台即可。
+
+问题：V061 BTFD仿真错误，之前V06正确的CASE也错误。
+结果：很复杂，调试了两三天，终于找到了问题所在，FPGA改了我们的一个库，导致逻辑有错误。
