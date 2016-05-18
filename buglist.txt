@@ -103,3 +103,32 @@ fec_b 第一个case，com0 vdec解码全部错误
 
 问题：V061 BTFD仿真错误，之前V06正确的CASE也错误。
 结果：很复杂，调试了两三天，终于找到了问题所在，FPGA改了我们的一个库，导致逻辑有错误。
+
+20160512    11:17
+问题：V061 WCDMA_SUBSYS TEST247 HU3GE_B COM0 TTRAM总是0。
+结果：配置三个COM，系统对ACTIVE_LIST采用读改写LOAD任务，三个COM并行引擎同时工作，结果三个读同时到来，系统先响应三个读，再响应三个写，导致操作和计划不符，内部混乱。
+
+20160513    10:51
+问题：V061 WCDMA_SUBSYS TEST247 HU3GE_B COM0 TTRAM总是0。
+结果：还是没改对。
+
+20160516    17:14
+问题：fec_a 覆盖率补充log test258 ttram比不上。
+结果：10ms turbo码错误，log中只有sys，p1/2都被punc了，实际波形中，sys/p1/p2都有，经查看em/ep有明显问题，em>ep，导致负数溢出，产生不该产生的结果，感觉log问题较大，已确认解决。
+
+20160517    10:41
+问题：wcdma_subsys test17 btfd ribram 比不对。
+结果：平台在收到9个VDEC中断后就开始比结果，但此时btfd才刚开始dump至ribram，平台比早了。小平台是等到btfd_state为1，即全部处理完再比，大平台没改对。
+
+问题：btfd fpga test21/23 RIBRAM错10几个word。
+结果：对比TTRAM，正确，但RIBRAM不对，让钟磊查看SEL_ABCD寄存器，发现配置的没起作用，查看后发现用的地址不对，修改后test21通过，test23错三个word。
+
+20160518    15:44
+问题：wcdmw_subsys hu3ge_b com0 ttram不对，新伟说好像是finger还没写完一帧就已经启动dint了。
+结果：我看现象，并按照新伟提供的思路，很快定位了问题，测试平台顶层comb_c0_pos_c1本来应该接在finger上的，结果连成了一个常数，导致无法正确识别帧接收情况。
+
+问题：fec dpch test250 turbo ttram从地址666开始对比出错。
+结果：666位于两个CB交界点，查看后发现此TTRAM WORD中四个SYMBOL中只存了三个，剩下一个存在了下一地址，将那个SYMBOL取回拼接后此WORD正确。因此联想到此前做coverage时，对系统代码dint_space_sel设置的问题，明确让他们出一个CASE，以验证系统代码设置的正确性，正好这个CASE验证了系统代码不对。
+
+问题：fec dpch test255 turbo ttram从地址4开始对比出错。
+结果：rm参数em>ep，明显不符合要求，应该是LOG问题。
