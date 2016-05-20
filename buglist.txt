@@ -124,7 +124,7 @@ fec_b 第一个case，com0 vdec解码全部错误
 结果：对比TTRAM，正确，但RIBRAM不对，让钟磊查看SEL_ABCD寄存器，发现配置的没起作用，查看后发现用的地址不对，修改后test21通过，test23错三个word。
 
 20160518    15:44
-问题：wcdmw_subsys hu3ge_b com0 ttram不对，新伟说好像是finger还没写完一帧就已经启动dint了。
+问题：wcdmw_subsys test404 hu3ge_b com0 ttram不对，新伟说好像是finger还没写完一帧就已经启动dint了。
 结果：我看现象，并按照新伟提供的思路，很快定位了问题，测试平台顶层comb_c0_pos_c1本来应该接在finger上的，结果连成了一个常数，导致无法正确识别帧接收情况。
 
 问题：fec dpch test250 turbo ttram从地址666开始对比出错。
@@ -132,3 +132,21 @@ fec_b 第一个case，com0 vdec解码全部错误
 
 问题：fec dpch test255 turbo ttram从地址4开始对比出错。
 结果：rm参数em>ep，明显不符合要求，应该是LOG问题。
+
+问题：btfd fpga test23 RIBRAM TF13错误两个WORD。
+结果：在FPGA搭建的仿真平台上仿真后发现，错误现象和实际板子运行结果一样，可以在这个平台上直接找原因，很方便了。因有事还没找。
+
+20160519    10:07
+问题：wcdma_subsys test404 hu3ge_b com0 ribram全0。
+结果：昨天的问题解决后TTRAM对了，查看波形后发现解码数据已正确写入RIBRAM，读取为0应该是平台的错误，已初步定位，需要他们查。经联合查看，平台RAM接错了。
+
+20160519    20:09
+问题：fpga btfd test23 RIBRAM个别word错误。
+结果：本地平台仿真通过，但对比波形却解码错误，经检查测试平台有漏洞，未正确对比结果。至于错误原因，目前怀疑是log，正在重新打印中。。
+
+20160520    13:24
+问题：btfd test23 在平台修正后，list模式仍然有问题，并且对比错误超级多，超过了设定的1000个。
+结果：因为之前心里有谱，这版肯定没有大问题，应该是过的，所以直接路过代码检查着重从大方面入手想，想到了header空间溢出，TRCH和TF过多，导致header会写溢出，而此时平台还没比呢，等平台回来再比就肯定出错。平台这块设计太差，思路有问题，而且应该考虑到这种情况的。
+
+问题：btfd test23 平台修正后，list模式提示RIBRAM和HEADER错误。
+结果：对比波形和仿真log，发现仿真log打印的都不对，波形和系统LOG是对的上的，应该还是验证平台的问题。
