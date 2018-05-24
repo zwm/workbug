@@ -150,3 +150,17 @@ fec_b 第一个case，com0 vdec解码全部错误
 
 问题：btfd test23 平台修正后，list模式提示RIBRAM和HEADER错误。
 结果：对比波形和仿真log，发现仿真log打印的都不对，波形和系统LOG是对的上的，应该还是验证平台的问题。
+
+20160526    14:17
+问题：fec dpch test316 ttram错了两个，ribram错了6个。
+结果：首先检查ttram，发现只错了个别，错误symbol都是LOG是10_0000，HW是10_0001，HW做了一个饱和处理，才使10_0000变为10_0001，肯定是LOG问题，经沟通是系统RAKE代码更新引起的。
+
+问题：fec btfd test101 ribram比不上，错了很多。
+结果：对比波形和LOG，错的确实很多，大概扫了一下配置，感觉LOG打印的是LIST解码结果，而实际配置下来的是非LIST模式，应该又是LOG问题。
+
+问题：fec dbits_dump_test0 header1对比总是错误。
+结果：VDEC输出和DIBTS输出都是对的，经查询是平台问题，HEADER对比还是从RIBRAM读的，肯定不对。Qi和Shangjie没有沟通才导致平台出现这种问题。
+
+20160608    1041
+问题：大链路btfd test18第二帧ribram index6对比出错。
+结果：波形和log都是对的，仿真输出log中显示读取的数据是错的，Qi确认后是仿真脚本问题。
